@@ -9,32 +9,53 @@
 
       <div class="form">
         <div class="form-item">
-          <input class="inp" maxlength="11" placeholder="请输入手机号码" type="text">
+          <input
+            v-model="mobile"
+            class="inp"
+            maxlength="11"
+            placeholder="请输入手机号码"
+            type="text"
+          />
         </div>
         <div class="form-item">
-          <input class="inp" maxlength="5" placeholder="请输入图形验证码" type="text" v-model="picCode">
-          <img v-if="picUrl" :src="picUrl" alt="" @click="getPicCode()">
+          <input
+            class="inp"
+            maxlength="5"
+            placeholder="请输入图形验证码"
+            type="text"
+            v-model="picCode"
+          />
+          <img v-if="picUrl" :src="picUrl" alt="" @click="getPicCode()" />
         </div>
         <div class="form-item">
-          <input class="inp" placeholder="请输入短信验证码" type="text">
-          <button>获取验证码</button>
+          <input v-model="msgCode" class="inp" placeholder="请输入短信验证码" type="text" />
+          <button @click="getCode">
+            {{
+              second === totalSecond ? "获取验证码" : second + "秒后重新发送"
+            }}
+          </button>
         </div>
       </div>
 
-      <div class="login-btn">登录</div>
+      <div @click="login" class="login-btn">登录</div>
     </div>
   </div>
 </template>
 
 <script>
-import { getPicCode } from '@/api/login'
+import { codeLogin, getMsgCode, getPicCode } from '@/api/login'
 export default {
   name: 'LoginPage',
   data () {
     return {
       picCode: '',
       picKey: '',
-      picUrl: ''
+      picUrl: '',
+      totalSecond: 60,
+      second: 60,
+      timer: null,
+      mobile: '',
+      msgCode: ''
     }
   },
   async created () {
@@ -42,10 +63,57 @@ export default {
   },
   methods: {
     async getPicCode () {
-      const { data: { base64, key } } = await getPicCode()
+      const {
+        data: { base64, key }
+      } = await getPicCode()
       this.picUrl = base64
       this.picKey = key
+    },
+    async getCode () {
+      if (!this.validNum()) return
+      if (!this.timer && this.second === this.totalSecond) {
+        const res = await getMsgCode(this.picCode, this.picKey, this.mobile)
+        this.$toast('短信发送成功，注意查收')
+        console.log(res)
+        this.timer = setInterval(() => {
+          this.second--
+          if (this.second < 1) {
+            clearInterval(this.timer)
+            this.timer = null
+            this.second = this.totalSecond
+          }
+        }, 1000)
+      }
+    },
+    validNum () {
+      if (!/^1[3-9]\d{9}$/.test(this.mobile)) {
+        this.$toast('请输入正确的手机号')
+        return false
+      }
+      if (!/^\w{4}$/.test(this.picCode)) {
+        this.$toast('请输入正确的图形验证码')
+        return false
+      }
+      return true
+    },
+    async login () {
+      if (!this.validNum()) {
+        return
+      }
+      if (!/^\d{6}$/.test(this.msgCode)) {
+        this.$toast('请输入正确的手机验证码')
+        return
+      }
+      const res = await codeLogin(this.mobile, this.msgCode)
+      this.$store.commit('user/setUserInfo', res.data)
+      this.$toast.success('登录成功')
+      console.log(res)
+      this.$router.push('/')
     }
+  },
+  // 离开页面清除定时器
+  destroyed () {
+    clearInterval(this.timer)
   }
 }
 </script>
@@ -99,10 +167,10 @@ export default {
     width: 100%;
     height: 42px;
     margin-top: 39px;
-    background: linear-gradient(90deg,#ecb53c,#ff9211);
+    background: linear-gradient(90deg, #ecb53c, #ff9211);
     color: #fff;
     border-radius: 39px;
-    box-shadow: 0 10px 20px 0 rgba(0,0,0,.1);
+    box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 0.1);
     letter-spacing: 2px;
     display: flex;
     justify-content: center;
