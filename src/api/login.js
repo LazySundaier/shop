@@ -15,8 +15,8 @@ export const codeLogin = (mobile, smsCode) => {
   return request.post('/passport/login', {
     form: {
       isParty: false,
-      partyData: {},
       mobile,
+      partyData: {},
       smsCode
     }
   })

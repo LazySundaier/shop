@@ -72,9 +72,8 @@ export default {
     async getCode () {
       if (!this.validNum()) return
       if (!this.timer && this.second === this.totalSecond) {
-        const res = await getMsgCode(this.picCode, this.picKey, this.mobile)
+        await getMsgCode(this.picCode, this.picKey, this.mobile)
         this.$toast('短信发送成功，注意查收')
-        console.log(res)
         this.timer = setInterval(() => {
           this.second--
           if (this.second < 1) {
@@ -104,11 +103,13 @@ export default {
         this.$toast('请输入正确的手机验证码')
         return
       }
-      const res = await codeLogin(this.mobile, this.msgCode)
+      const res = await codeLogin(this.mobile, +this.msgCode)
       this.$store.commit('user/setUserInfo', res.data)
       this.$toast.success('登录成功')
       console.log(res)
-      this.$router.push('/')
+
+      const url = this.$route.query.backUrl || '/'
+      this.$router.replace(url)
     }
   },
   // 离开页面清除定时器

@@ -12,6 +12,7 @@ import Home from '@/views/layout/home'
 import Category from '@/views/layout/category'
 import Cart from '@/views/layout/cart'
 import User from '@/views/layout/user'
+import List from '@/views/search/list'
 
 import store from '@/store'
 Vue.use(VueRouter)
@@ -23,6 +24,7 @@ const router = new VueRouter({
     { path: '/pay', component: Pay },
     { path: '/prodetail/:id', component: Prodetail },
     { path: '/search', component: Search },
+    { path: '/searchlist', component: List },
     {
       path: '/',
       redirect: '/home',
